@@ -1,0 +1,14 @@
+#,duration,freq,direction,volume
+#,RUN or PAUSE,,,
+#,RUN in number of osc or ml,freq in Hz,"Right = 1, Left = 0",number of direction changes = # oscillations*2-1 
+#,PAUSE in s,,,
+RUN,4,0.025,CW,0
+PAUSE,120,,,
+RUN,8,0.059,CW,0
+PAUSE,120,,,
+RUN,4,0.017,CW,0
+PAUSE,120,,,
+RUN,4,0.033,CW,0
+PAUSE,120,,,
+RUN,4,0.009,CW,0
+PAUSE,120,,,

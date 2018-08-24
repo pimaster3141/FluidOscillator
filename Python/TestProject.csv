@@ -1,0 +1,7 @@
+#,duration,freq,direction,volume
+RUN,2,0.1,CW,0.5
+PAUSE,5,,,
+RUN,2,0.1,CW,0.5
+PAUSE,5,,,
+RUN,2,0.1,CW,0.5
+PAUSE,5,,,
