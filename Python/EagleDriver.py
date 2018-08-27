@@ -123,4 +123,13 @@ class EagleDriver(threading.Thread):
 		return crc;
 
 	def asciiEncode(data):
-		return (data);
+		tempString = '';
+		for d in data:
+			tempString = tempString + hex(d).split('x')[1].upper();
+
+		output = []
+		for b in tempString:
+			output.append(ord(b));
+
+
+		return (output);
