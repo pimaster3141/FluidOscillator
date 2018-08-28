@@ -21,8 +21,9 @@ class EagleDriver(threading.Thread):
 				137, 24, 232, 121, 75, 218, 42, 187, 78, 223, 47, 190, 140, 29, 237, 124,
 				68, 213, 37, 180, 134, 23, 231, 118, 131, 18, 226, 115, 65, 208, 32, 177]
 
-	HOST_ENABLE_CMD = 0xF13BD08C;
-	HOST_ENABLE_REFRESH_PERIOD = 5;
+	# HOST_ENABLE_CMD = 0xF13BD08C;
+	HOST_ENABLE_CMD = [0x02, 0xf5, 0x33, 0x20, 0x46, 0x31, 0x33, 0x42, 0x44, 0x30, 0x38, 0x43, 0x20, 0x32, 0x45, 0x03]
+	HOST_ENABLE_REFRESH_PERIOD = 3;
 
 	def __init__(self, port):
 		threading.Thread.__init__(self);
@@ -33,13 +34,13 @@ class EagleDriver(threading.Thread):
 
 		while(self.com.inWaiting() != 0):
 			time.sleep(0.5);
-			com.reset_input_buffer();
+			self.com.reset_input_buffer();
 
-		self.com.write(bytes([HOST_ENABLE_CMD]));
+		self.com.write(bytes(EagleDriver.HOST_ENABLE_CMD));
 		self.com.flush();
 		time.sleep(0.5);
 
-		if(self.com.inWaiting == 0):
+		if(self.com.inWaiting() == 0):
 			raise Exception("Device Error. Check EMV");
 		print("EMV Connected...");
 
@@ -52,43 +53,47 @@ class EagleDriver(threading.Thread):
 		while(self.isAlive):
 			self.comLock.acquire();
 			try:
-				self.com.write(bytes([HOST_ENABLE_CMD]));
+				self.com.write(bytes(EagleDriver.HOST_ENABLE_CMD));
 				self.com.flush();
 			finally:
-				self.lock.release();
+				self.comLock.release();
 			
 			time.sleep(0.5);
-			if(self.com.inWaiting == 0):
+			if(self.com.inWaiting() == 0):
 				self.isAlive = False;
 				raise Exception("Device Error. Check EMV");
 				break;
 
-			time.sleep(max(HOST_ENABLE_CMD-0.5, 0.1));
+			time.sleep(max(EagleDriver.HOST_ENABLE_REFRESH_PERIOD-0.5, 0.1));
 
 		print("Stopping EMV");
+		return;
 
 	def sendData(self, ID, data):
 		if(self.isAlive == False):
 			raise Exception("No Device");
 			return;
 
-		if(length(bytes([ID])) != 1):
+		if(len(bytes([ID])) != 1):
 			raise Exception("Invalid ID");
 
 		# data = EagleDriver.asciiEncode(data);
-		payload = [ID, 0x33, 0x20] + data = [0x20];
+		payload = [ID, 0x33, 0x20] + data + [0x20];
 
 		crc = EagleDriver.calcCRC(payload);
-		crc = EagleDriver.asciiEncode(crc);
+		crc = EagleDriver.asciiEncode(crc, 2);
 
 		payload = [0x02] + payload + crc + [0x03];
+
+		# return(payload);
 
 		self.comLock.acquire();
 		try:
 			self.com.write(bytes(payload));
 			self.com.flush();
+			print(payload);
 		finally:
-			self.lock.release();
+			self.comLock.release();
 
 		return;
 
@@ -97,8 +102,7 @@ class EagleDriver(threading.Thread):
 		peep = max(peep, 0);
 
 		peep = int((peep+10)*10);
-		data = EagleDriver.asciiEncode(data);
-		data = data[1:];
+		data = EagleDriver.asciiEncode(peep, 3);
 
 		self.sendData(0x06, data);
 		return;
@@ -112,9 +116,6 @@ class EagleDriver(threading.Thread):
 			del self.com;
 		return;
 
-
-
-
 		
 	def calcCRC(data):
 		crc = 0xFF;
@@ -122,7 +123,10 @@ class EagleDriver(threading.Thread):
 			crc = EagleDriver.CRC_TABLE[crc ^ d];
 		return crc;
 
-	def asciiEncode(data):
+	def asciiEncode(data, size):
+		if(type(data) == int):
+			data = [data];
+
 		tempString = '';
 		for d in data:
 			tempString = tempString + hex(d).split('x')[1].upper();
@@ -131,5 +135,8 @@ class EagleDriver(threading.Thread):
 		for b in tempString:
 			output.append(ord(b));
 
-
+		if(len(output) < size):
+			output = [0x30]*(size-len(output)) + output;
+		else:
+			output = output[-size:];
 		return (output);
