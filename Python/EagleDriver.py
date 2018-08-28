@@ -91,7 +91,7 @@ class EagleDriver(threading.Thread):
 		try:
 			self.com.write(bytes(payload));
 			self.com.flush();
-			print(payload);
+			# print(payload);
 		finally:
 			self.comLock.release();
 
