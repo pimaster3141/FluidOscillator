@@ -17,7 +17,10 @@ class PEEPDriver(threading.Thread):
         self.isAlive = True;
 
     def run(self):
+    	startTime = time.time();
         while(isAlive):
+        	loopTime = time.time();
+        	self.
             
 
 

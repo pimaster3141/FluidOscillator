@@ -52,7 +52,7 @@ class DeviceAPI():
 
     # motor/pump - offset by ml or angle
     # EMV - set PEEP to value;
-    def offset(self, offset):
+    def offset(self, direction, offset):
         return;
 
     def isRunning():
