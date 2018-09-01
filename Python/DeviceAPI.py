@@ -9,15 +9,9 @@ class DeviceAPI():
     #            2-2.5ml Pump
     #            3-EMV]
     def __init__(self, motorCOM, devID, emvCOM=None):
-        if(devID < 0 or devID > 3):
-            raise Exception("Invalid DeviceID");
-
-        if(devID == 3 and emvCOM == None):
-            raise Exception("No EMV COM Specified");
 
         self.motorCOM = motorCOM;
         self.emvCOM = emvCOM;
-        self.device = devID;
 
         return;
 
@@ -25,18 +19,12 @@ class DeviceAPI():
         self.close();
         return;
 
-    def setDevice(self, motorCOM, devID, emvCOM=None):
-        if(devID < 0 or devID > 3):
-            raise Exception("Invalid DeviceID");
+    # def setDevice(self, motorCOM, devID, emvCOM=None):
 
-        if(devID == 3 and emvCOM == None):
-            raise Exception("No EMV COM Specified");
+    #     self.motorCOM = motorCOM;
+    #     self.emvCOM = emvCOM;
 
-        self.motorCOM = motorCOM;
-        self.emvCOM = emvCOM;
-        self.device = devID;
-
-        return;
+    #     return;
 
     def close(self):
         return;
@@ -47,17 +35,30 @@ class DeviceAPI():
 
     # Frequency(Hz)
     # Amplitude(ml -or- mmHg) (NOT PEAK-PEAK)
-    def rotate(self, direction, frequency, amplitude, rotations):
-        return;
+    def rotate(self, devID, direction, frequency, amplitude, rotations):
+        self.checkID(devID);
 
     # motor/pump - offset by ml or angle
     # EMV - set PEEP to value;
-    def offset(self, direction, offset):
-        return;
+    def offset(self, devID, direction, offset):
+        self.checkID(devID);
 
-    def isRunning():
+    def isRunning(self, devID):
+        self.checkID(devID);
         return True;
 
-    def percentRemaning(steps=100):
+    def percentRemaning(self, devID, steps=100):
+        self.checkID(devID);
         return steps;
+
+    def isAnyRunning(self):
+        return True;
+
+    def checkID(self, devID):
+        if(devID < 0 or devID > 3):
+            raise Exception("Invalid DeviceID");
+
+        if(devID == 3 and emvCOM == None):
+            raise Exception("No EMV COM Specified");
+        return;
 

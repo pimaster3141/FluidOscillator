@@ -14,6 +14,19 @@ class StepperDriver():
 		self.com.port = port;
 		self.com.open();
 
+		while(self.com.inWaiting() != 0):
+			time.sleep(0.5);
+			self.com.reset_input_buffer();
+
+		self.sendPacket([STATUS_REQ]);
+		self.com.flush();
+		time.sleep(1);
+
+		if(self.com.inWaiting() != 7):
+			raise Exception("Device not found. Check Motor Controller");
+		print("Motor Connected...");
+		self.com.read(self.com.inWaiting());
+
 		self.rotationSteps = resolution;
 		return;
 
@@ -63,7 +76,7 @@ class StepperDriver():
 		self.sendPacket([STATUS_REQ]);
 		
 		data = self.com.read(5);
-		data = processBytes(data);
+		data = StepperDriver.processBytes(data);
 		data[2] = data[2] & 0x3F;
 		return(sum(data) != 0);
 

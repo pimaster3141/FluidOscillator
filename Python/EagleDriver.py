@@ -44,7 +44,7 @@ class EagleDriver(threading.Thread):
 		time.sleep(0.5);
 
 		if(self.com.inWaiting() == 0):
-			raise Exception("Device Error. Check EMV");
+			raise Exception("Device not found. Check EMV");
 		print("EMV Connected...");
 
 		self.comLock = Lock();
@@ -123,7 +123,7 @@ class EagleDriver(threading.Thread):
 
 	def stepsRemaining(self):
 		if(self.rotation == None):
-			return 0:
+			return 0;
 		return self.rotation.stepsRemaining();
 
 
