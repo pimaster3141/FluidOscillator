@@ -58,7 +58,7 @@ class DeviceAPI():
         if(devID < 0 or devID > 3):
             raise Exception("Invalid DeviceID");
 
-        if(devID == 3 and emvCOM == None):
+        if(devID == 3 and self.emvCOM == None):
             raise Exception("No EMV COM Specified");
         return;
 

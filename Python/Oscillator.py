@@ -28,6 +28,7 @@ class Oscillator():
         self.frq = [] # list of frequencies 
         self.T   = [] # list of # of rotations / frq 
         self.vol = [] # stroke volume
+        self.dev = [] # device inducing pressure change
         self.dir = [] # list of directions
         self.schedule = [] # 1 = rotating 0: pause
         self.pause = [] # pause duration
@@ -38,9 +39,9 @@ class Oscillator():
         self.rotationSteps = IntVar()
         self.motorCOM = StringVar()
         self.emvCOM = StringVar()
-        self.MotorNames = ["Motor", "Pump 25ml", "Pump 2.5ml"]
+        self.MotorNames = ["Gravity", "Pump 25ml", "Pump 2.5ml","EMV+"]
         self.MotorSelection = StringVar() 
-        self.MotorSelection.set(self.MotorNames[-1])
+        self.MotorSelection.set(self.MotorNames[0])
         self.motorCOM.set(self.portNames[-1])
         self.emvCOM.set("None")
         self.totalDuration = 0
@@ -49,7 +50,8 @@ class Oscillator():
         self.alarmsound = "beep.wav"
         self.commandTime = 0
         self.isalarming = 1
-
+        self.timeleft = 0
+        
         self.device = [] # deviceAPI object
         self.devID = 0
         
@@ -109,7 +111,7 @@ class Oscillator():
         
     def __del__(self):
         try:
-            self.commandTime = self.device.rotate(0,0,0,0)
+            self.commandTime = self.device.rotate(self.devID,0,0,0,0)
             self.device.close()
         except Exception as e:
             print(e)
@@ -134,6 +136,7 @@ class Oscillator():
                     freq = row['freq']
                     direction = row['direction']
                     vol = row['volume']
+                    dev = row['dev']
                     if schedule == "PAUSE":
                         self.schedule.append(bool(0))
                         self.pause.append(float(duration))
@@ -141,6 +144,7 @@ class Oscillator():
                         self.dir.append(bool(0))
                         self.frq.append(float(0))
                         self.vol.append(float(0))
+                        self.dev.append(int(0))
                         self.N+=1
                     elif schedule == "RUN":
                         self.schedule.append(bool(1))
@@ -155,13 +159,15 @@ class Oscillator():
                             mb.showerror("False Statement","Rotation direction in line "+ str(line) + " unknown.")
                         self.frq.append(float(freq))
                         self.vol.append(float(vol))
+                        self.dev.append(int(dev))
                         self.N+=1
                     elif schedule == "#":
                         continue
                         # ignore comment
                     else:
                         mb.showerror("False Statement","Command in line "+ str(line) + " unknown.")
-            
+            self.devID = self.dev[0]
+            self.MotorSelection.set(self.MotorNames[self.dev[0]])
             self.showSchedule()
             self.calcDuration()
         
@@ -176,6 +182,8 @@ class Oscillator():
         b.grid(row=0, column=4)
         b = Label(self.table, text="Volume",justify=LEFT,width=20)
         b.grid(row=0, column=5)
+        b = Label(self.table, text="Device",justify=LEFT,width=20)
+        b.grid(row=0, column=6)
         for i in range(self.N): #Rows
             if self.schedule[i]==1:
                 b = Label(self.table, text="ROTATION", justify=RIGHT, anchor="e", fg="green")
@@ -188,6 +196,8 @@ class Oscillator():
                 b.grid(row=i+1, column=4)
                 b = Label(self.table, text=str(self.vol[i]),justify=LEFT)
                 b.grid(row=i+1, column=5)
+                b = Label(self.table, text=self.MotorNames[self.dev[i]],justify=LEFT)
+                b.grid(row=i+1, column=6)
                 
             else:
                 b = Label(self.table, text="PAUSE", justify=RIGHT, anchor="e")
@@ -200,22 +210,23 @@ class Oscillator():
                 b.grid(row=i+1, column=4)
                 b = Label(self.table, text="",justify=LEFT)
                 b.grid(row=i+1, column=5)
+                b = Label(self.table, text="",justify=LEFT)
+                b.grid(row=i+1, column=6)
         self.table.pack(side=TOP,fill=X)    
             
     def setMarker(self):
         self.device.sendPulse();
         
     def isRotating(self):
-        self.motorState = self.device.isRunning();
+        self.motorState = self.device.isAnyRunning();
         return self.motorState
     
     def remainingSteps(self):
-        if self.commandTime != 0:
-            remain = self.device.stepsRemaining()
-            self.remainingTime = self.commandTime - remain
-            self.pb["value"]=(1.0*self.remainingTime/self.commandTime)*100
+        if self.isRotating():
+            self.remainingTime = self.device.percentRemaning(seld.devID)
+            self.pb["value"] = self.remainingTime
             print(self.isalarming)
-            if (1.0*self.remainingTime/self.commandTime)*100 > 90.0 and self.schedule[self.n-1] == TRUE and self.isalarming == 0:
+            if self.remainingTime < 10.0 and self.schedule[self.n-1] == TRUE and self.isalarming == 0:
                 self.isalarming = 1
                 try:
                     winsound.PlaySound(self.alarmsound, winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NOSTOP)
@@ -242,7 +253,8 @@ class Oscillator():
                             
                     else: # true == spin command
                         self.isalarming = 0
-                        self.commandTime = self.device.rotate(self.dir[self.n], self.frq[self.n], self.vol[self.n], self.T[self.n])
+                        self.devID = self.dev[self.n]
+                        self.commandTime = self.device.rotate(self.devID,self.dir[self.n], self.frq[self.n], self.vol[self.n], self.T[self.n])
                         self.motorState=TRUE
                         self.status['text'] = 'Rotating at ' + str(self.frq[self.n]) + 'Hz...'
                         self.n += 1
@@ -268,54 +280,52 @@ class Oscillator():
         self.popup.mainloop()
         
     def connectPort(self):
-        print(self.emvCOM.get())
-        print(self.motorCOM.get())
-        self.device = DeviceAPI(self.motorCOM.get(),self.devID,self.emvCOM.get())
+        self.device = DeviceAPI.DeviceAPI(self.motorCOM.get(),self.devID,self.emvCOM.get())
         self.deviceMenu.configure(state="normal")
         self.startButt['state'] = 'normal'
         self.stopButt['state']  = 'disabled'
         self.markButt['state']  = 'normal'
         self.OffsetButt['state']  = 'normal'
         self.deviceMenu['state'] = 'normal'
-        self.status['text'] = 'Motor Controller via: ' + self.motorCOM.get() + 'EMV+ via: ' + self.emvCOM.get()
+        self.status['text'] = 'Motor Controller via: ' + self.motorCOM.get() + '    EMV+ via: ' + self.emvCOM.get()
         self.popup.destroy()
         del self.popup
 
     def changeDevice(self,deviceName):
-        if not self.isRotating():
-            self.devID = self.portNames.index(self.MotorSelection.get())
-            self.device.setDevice(self.devID)
+        if self.isRotating() == FALSE:
+            self.devID = self.MotorNames.index(self.MotorSelection.get())
+            print(self.devID)
 
     def offsetWin(self):
-        self.popup = Toplevel()
-        self.popup.title("Offset Device Position")
         if self.devID == 0: # Motor
-            self.ml = simpledialog.askfloat("Amount", "Degree offset [deg], +:CCW", parent=self.popup, minvalue=-360.0, maxvalue=360, initialvalue=self.ml)
+            self.ml = simpledialog.askfloat("Offset", "Degree offset [deg], +:CCW", parent=self.master, minvalue=-360.0, maxvalue=360, initialvalue=self.ml)
         elif self.devID == 3: # EMV+
-            self.ml = simpledialog.askfloat("Amount", "PEEP offset [mmHg]", parent=self.popup, minvalue=-30.0, maxvalue=30, initialvalue=self.ml)
+            self.ml = simpledialog.askfloat("Offset", "PEEP offset [mmHg]", parent=self.master, minvalue=-30.0, maxvalue=30, initialvalue=self.ml)
         else: 
             if self.devID == 1:
                 den=1.0
             else:
                 den = 10.0
-            self.ml = simpledialog.askfloat("Amount", "Enter volume [ml], +:fill", parent=self.popup, minvalue=-25/den, maxvalue=25/den, initialvalue=self.ml)
-        self.Button(self.popup, text = "GO", command = self.offset)
-        self.popup.mainloop()
+            self.ml = simpledialog.askfloat("Offset", "Enter volume [ml], +:fill", parent=self.master, minvalue=-25/den, maxvalue=25/den, initialvalue=self.ml)
+        if self.ml != None:
+                self.offset()
 
     def offset(self):
         if self.isRotating() == FALSE:
-            if self.ml is not None:
-                self.status['text'] = 'Filling...'
-                self.status.update()
-                self.commandTime = self.device.offset(self.ml)
-                time.sleep((int(self.ml / (0.5/den) + 0.1)))
+            self.status.update()
+            if self.ml < 0:
+                direction = 0
+            else:
+                direction = 1
+            self.device.offset(self.devID, direction, abs(self.ml))
+            time.sleep(5) ###REVISION
 
     def start(self):
         if len(self.schedule) == 0:
             mb.showwarning("Abort.","No project found.")
         else:
             self.hasStarted = TRUE
-            self.device.rotate(0,0,0,0)
+            self.device.rotate(self.devID,0,0,0,0)
             self.n = 0;
             self.isalarming = 0
             self.timeleft = self.totalDuration
@@ -326,16 +336,18 @@ class Oscillator():
             self.status['text'] = 'Start...'
             self.OffsetButt['state'] = 'disabled'
             self.deviceMenu['state'] = 'disabled'
+            self.portButt ['state'] = 'disabled'
         
     def stop(self):
         if self.hasStarted:
             self.hasStarted = FALSE
-            self.device.rotate(0,0,0,0)
+            self.device.rotate(self.devID,0,0,0,0)
             self.stopButt['state'] = 'disabled'
             self.startButt['state'] = 'normal'
             self.status['text'] = 'Done.'
             self.OffsetButt['state'] = 'normal'
             self.deviceMenu['state'] = 'normal'
+            self.portButt ['state'] = 'normal'
             self.deviceMenu.configure(state="normal")
             self.isalarming = 1
        
@@ -348,6 +360,7 @@ class Oscillator():
         self.T   = [] # list of # of rotations / frq 
         self.vol = []
         self.dir = [] # list of directions
+        self.dev = []
         self.schedule = [] # 1 = rotating 0: pause
         self.pause = [] # pause duration
         self.filename =''
@@ -377,20 +390,21 @@ class Oscillator():
             self.Timer['text'] = timedelta(seconds=int(self.timeleft))
         else:
             self.hasStarted = FALSE
-            self.commandTime = self.device.rotate(0,0,0,0)
+            self.commandTime = self.device.rotate(self.devID,0,0,0,0)
 #            self.n = 0;
             self.stopButt['state'] = 'disabled'
             self.startButt['state'] = 'normal'
             self.status['text'] = 'Done.'
             self.OffsetButt['state'] = 'normal'
             self.deviceMenu['state'] = 'normal'
+            self.portButt ['state'] = 'normal'
             self.Timer['text'] = "00:00:00"
             self.timeleft = self.totalDuration
             
                              
         
     def kill(self):
-        self.commandTime = self.device.rotate(0,0,0,0)
+        self.commandTime = self.device.rotate(self.devID,0,0,0,0)
         self.status['text'] = 'Done.'
         
 ##########################################################################
