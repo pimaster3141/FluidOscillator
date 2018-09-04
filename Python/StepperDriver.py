@@ -9,7 +9,9 @@ class StepperDriver():
 
 	BAUD = 115200;
 
-	def __init__(self, port, resolution):
+	STEP_RATE_INTERVAL = 62500;
+
+	def __init__(self, port, resolution = 1000):
 		self.com = serial.Serial(port=None, baudrate=BAUD, timeout=1, rtscts=False);
 		self.com.port = port;
 		self.com.open();
@@ -18,7 +20,7 @@ class StepperDriver():
 			time.sleep(0.5);
 			self.com.reset_input_buffer();
 
-		self.sendPacket([STATUS_REQ]);
+		self.sendPacket([StepperDriver.STATUS_REQ]);
 		self.com.flush();
 		time.sleep(1);
 
@@ -34,6 +36,10 @@ class StepperDriver():
 		self.close();
 		return;
 
+	def setResolution(self, resolution):
+		self.rotationSteps = resolution;
+		return;
+
 	def close(self):
 		if(self.com.isOpen()):
 			self.com.close();
@@ -42,7 +48,7 @@ class StepperDriver():
 
 	def sendPacket(self, data):
 		self.com.flush();
-		self.com.write(bytes([PACKET_HEADER]));
+		self.com.write(bytes([StepperDriver.PACKET_HEADER]));
 		self.com.flush();
 		# print(bytes(data));
 		for d in data:
@@ -52,13 +58,53 @@ class StepperDriver():
 		return;
 
 	def sendPulse(self):
-		self.sendPacket([PULSE_CMD]);
+		self.sendPacket([StepperDriver.PULSE_CMD]);
 		return;
+
+	def rotate(self, direction=0, frequency=0.2, displacement=1, quadrants=0):
+
+	    #direction unsupported ATM
+	    payload = [];
+	    numSteps = round(displacement*self.rotationSteps);
+	    # print(str(direction) + "  " + str(frequency)+ "  " +str(displacement)+ "  " +str(quadrants))
+	    if(frequency == 0):
+	        duty = 100;
+	        pulseRate = 0;
+	    else:
+	        pulseRate = frequency*self.rotationSteps;
+	        duty = max(45, pulseRate);
+	        pulseRate = int(StepperDriver.STEP_RATE_INTERVAL/pulseRate);
+
+	    payload.append(StepperDriver.MOTOR_HEADER);
+	    payload.append(int(min(duty, 100))) # duty 
+
+	    # if(pulseRate<256):
+	    #   payload.append(0);
+	    # payload.append(pulseRate);
+	    payload.append((pulseRate >> 8) & 0x00FF);
+	    payload.append(pulseRate & 0x00FF);
+
+	    # if(numSteps<256):
+	    #   payload.append(0);
+	    # payload.append(numSteps);
+	    payload.append((numSteps >> 8) & 0x00FF);
+	    payload.append(numSteps & 0x00FF);
+
+	    if(direction):
+	        payload.append(0x40 + (quadrants & 0x3F));
+	    else:
+	        payload.append(0xC0 + (quadrants & 0x3F));
+
+	    # print(payload);
+	    self.sendPacket(payload);
+
+	    # rotationIndex = numSteps * (1+quadrants&0x3F);
+	    # return rotationIndex;
 
 	def stepsRemaining(self):
 		# time.sleep(0.1);
 		self.com.reset_input_buffer()
-		self.sendPacket([STATUS_REQ]);
+		self.sendPacket([StepperDriver.STATUS_REQ]);
 
 		data = self.com.read(7);
 		data = StepperDriver.processBytes(data);
@@ -73,7 +119,7 @@ class StepperDriver():
 	def isRunning(self):
 		# time.sleep(0.1);
 		self.com.reset_input_buffer()
-		self.sendPacket([STATUS_REQ]);
+		self.sendPacket([StepperDriver.STATUS_REQ]);
 		
 		data = self.com.read(5);
 		data = StepperDriver.processBytes(data);
