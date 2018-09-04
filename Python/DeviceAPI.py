@@ -72,8 +72,7 @@ class DeviceAPI():
     def checkID(self, devID):
         if(devID < 0 or devID > 3):
             raise Exception("Invalid DeviceID");
-
+            
         if(devID == 3 and self.emv == None):
             raise Exception("No EMV Connected!");
-        return;
 
