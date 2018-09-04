@@ -26,7 +26,7 @@ class EagleDriver(threading.Thread):
 	HOST_ENABLE_CMD = [0x02, 0xf5, 0x33, 0x20, 0x46, 0x31, 0x33, 0x42, 0x44, 0x30, 0x38, 0x43, 0x20, 0x32, 0x45, 0x03]
 	HOST_ENABLE_REFRESH_PERIOD = 3;
 
-	def __init__(self, port, stepperDriver):
+	def __init__(self, port, stepperDriver, baseline=5):
 		threading.Thread.__init__(self);
 
 		self.stepperDriver = stepperDriver;
@@ -49,6 +49,10 @@ class EagleDriver(threading.Thread):
 
 		self.comLock = Lock();
 		self.rotation = None;
+		self.baseline = 5;
+
+		self.totalCycles = 0;
+
 		self.isAlive = True;
 		self.start();
 
@@ -115,11 +119,25 @@ class EagleDriver(threading.Thread):
 		self.stepperDriver.sendPulse();
 		return;
 
-	def rotate(amplitude, baseline, cycles, frequency):
+	def rotate(self, amplitude, cycles, frequency):
 		if(self.rotation != None):
 			self.rotation.stop();
-		self.rotation = PEEPRotate.PEEPRotate(self, amplitude, baseline, cycles, frequency);
-		return cycles;
+		self.rotation = PEEPRotate.PEEPRotate(self, amplitude, self.baseline, cycles, frequency);
+		
+		self.totalCycles = cycles;
+		return;
+
+	def stopRotate(self):
+		self.rotation.stop();
+		return;
+
+	def getTotalCycles(self):
+		return self.totalCycles;
+
+	def setBaseline(self, baseline):
+		self.baseline = baseline;
+		self.setPEEP(baseline);
+		return;
 
 	def stepsRemaining(self):
 		if(self.rotation == None):

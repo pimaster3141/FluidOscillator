@@ -3,7 +3,6 @@ import StepperDriver;
 
 class DeviceAPI():
 
-    MOTOR_RESOLUTIONS = [1698, 121, 1212];
 
     # devID:    [0-motor
     #            1-25ml Pump
@@ -43,31 +42,57 @@ class DeviceAPI():
 
     # Frequency(Hz)
     # Amplitude(ml -or- mmHg) (NOT PEAK-PEAK)
-    def rotate(self, devID, direction, frequency, amplitude, rotations):
+    def rotate(self, devID, direction, frequency, amplitude, cycles):
         self.checkID(devID);
 
         if(devID != 3):
-            self.motor.setResolution(DeviceAPI.MOTOR_RESOLUTIONS[devID]);
-            if(devID == 0):
-                self.motor.rotate(direction, frequency)
+            self.motor.setDevice(StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
+            self.motor.rotate(direction, amplitude, cycles, frequency);
+        else:
+            self.emv.rotate(amplitude, cycles, frequency);
+        return;
 
+    def stop(self, devID):
+        self.checkID(devID);
 
+        if(devID != 3):
+            self.motor.setDevice(StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
+            self.motor.rotate(0,0,0,0);
+        else:
+            self.emv.stopRotate();
+
+        return;
 
     # motor/pump - offset by ml or angle
     # EMV - set PEEP to value;
     def offset(self, devID, direction, offset):
         self.checkID(devID);
 
+        if(devID != 3):
+            self.motor.setDevice(StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
+            self.motor.rotate(direction, offset, 0, 0.5);
+        else:
+            self.emv.setBaseline(offset);
+        return;
+
     def isRunning(self, devID):
         self.checkID(devID);
-        return True;
+
+        if(devID != 3):
+            return self.motor.isRunning();
+        else:
+            return (self.emv.stepsRemaining() != 0);
 
     def percentRemaning(self, devID, steps=100):
         self.checkID(devID);
-        return steps;
+
+        if(devID != 3):
+            return(steps * self.motor.stepsRemaining()/self.motor.getTotalSteps());
+        else:
+            return(steps * self.emv.stepsRemaining()/self.emv.getTotalCycles());
 
     def isAnyRunning(self):
-        return True;
+        return (self.motor.isRunning() and self.emv.stepsRemaining==0);
 
     def checkID(self, devID):
         if(devID < 0 or devID > 3):

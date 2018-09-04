@@ -111,7 +111,7 @@ class Oscillator():
         
     def __del__(self):
         try:
-            self.commandTime = self.device.rotate(self.devID,0,0,0,0)
+            self.commandTime = self.device.stop(self.devID)
             self.device.close()
         except Exception as e:
             print(e)
@@ -280,7 +280,7 @@ class Oscillator():
         self.popup.mainloop()
         
     def connectPort(self):
-        self.device = DeviceAPI.DeviceAPI(self.motorCOM.get(),self.devID,self.emvCOM.get())
+        self.device = DeviceAPI.DeviceAPI(self.motorCOM.get(),self.emvCOM.get())
         self.deviceMenu.configure(state="normal")
         self.startButt['state'] = 'normal'
         self.stopButt['state']  = 'disabled'
@@ -325,7 +325,7 @@ class Oscillator():
             mb.showwarning("Abort.","No project found.")
         else:
             self.hasStarted = TRUE
-            self.device.rotate(self.devID,0,0,0,0)
+            self.device.stop(self.devID)
             self.n = 0;
             self.isalarming = 0
             self.timeleft = self.totalDuration
@@ -341,7 +341,7 @@ class Oscillator():
     def stop(self):
         if self.hasStarted:
             self.hasStarted = FALSE
-            self.device.rotate(self.devID,0,0,0,0)
+            self.device.stop(self.devID)
             self.stopButt['state'] = 'disabled'
             self.startButt['state'] = 'normal'
             self.status['text'] = 'Done.'
@@ -390,7 +390,7 @@ class Oscillator():
             self.Timer['text'] = timedelta(seconds=int(self.timeleft))
         else:
             self.hasStarted = FALSE
-            self.commandTime = self.device.rotate(self.devID,0,0,0,0)
+            self.commandTime = self.device.stop(self.devID)
 #            self.n = 0;
             self.stopButt['state'] = 'disabled'
             self.startButt['state'] = 'normal'
@@ -404,7 +404,7 @@ class Oscillator():
                              
         
     def kill(self):
-        self.commandTime = self.device.rotate(self.devID,0,0,0,0)
+        self.commandTime = self.device.stop(self.devID)
         self.status['text'] = 'Done.'
         
 ##########################################################################
