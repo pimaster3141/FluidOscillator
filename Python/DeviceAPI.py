@@ -11,7 +11,8 @@ class DeviceAPI():
     def __init__(self, motorCOM, emvCOM=None):
         self.motor = StepperDriver.StepperDriver(motorCOM);
         self.emv = None;
-        if(emvCOM != None):
+        if(emvCOM != None and emvCOM != "None"):
+            # print(emvCOM);
             self.emv = EagleDriver.EagleDriver(emvCOM, self.motor);
 
         return;
@@ -28,7 +29,8 @@ class DeviceAPI():
     #     return;
 
     def close(self):
-        self.emv.shutdown();
+        if(self.emv != None):
+            self.emv.shutdown();
         self.motor.close();
 
         del(self.emv);
@@ -46,7 +48,7 @@ class DeviceAPI():
         self.checkID(devID);
 
         if(devID != 3):
-            self.motor.setDevice(StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
+            self.motor.setDevice(StepperDriver.StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
             self.motor.rotate(direction, amplitude, cycles, frequency);
         else:
             self.emv.rotate(amplitude, cycles, frequency);
@@ -56,7 +58,7 @@ class DeviceAPI():
         self.checkID(devID);
 
         if(devID != 3):
-            self.motor.setDevice(StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
+            self.motor.setDevice(StepperDriver.StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
             self.motor.rotate(0,0,0,0);
         else:
             self.emv.stopRotate();
@@ -69,8 +71,8 @@ class DeviceAPI():
         self.checkID(devID);
 
         if(devID != 3):
-            self.motor.setDevice(StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
-            self.motor.rotate(direction, offset, 0, 0.5);
+            self.motor.setDevice(StepperDriver.StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
+            self.motor.rotate(direction, offset, 0, 0.05);
         else:
             self.emv.setBaseline(offset);
         return;
@@ -89,10 +91,16 @@ class DeviceAPI():
         if(devID != 3):
             return(steps * self.motor.stepsRemaining()/self.motor.getTotalSteps());
         else:
+            if(self.emv.getTotalCycles() == None):
+                return steps;
             return(steps * self.emv.stepsRemaining()/self.emv.getTotalCycles());
 
     def isAnyRunning(self):
-        return (self.motor.isRunning() and self.emv.stepsRemaining==0);
+        # print("checking things");
+        if(self.emv != None):
+            return (self.motor.isRunning() or self.emv.isRunning());
+        else:
+            return(self.motor.isRunning());
 
     def checkID(self, devID):
         if(devID < 0 or devID > 3):

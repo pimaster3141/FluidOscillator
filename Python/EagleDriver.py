@@ -26,7 +26,7 @@ class EagleDriver(threading.Thread):
 	HOST_ENABLE_CMD = [0x02, 0xf5, 0x33, 0x20, 0x46, 0x31, 0x33, 0x42, 0x44, 0x30, 0x38, 0x43, 0x20, 0x32, 0x45, 0x03]
 	HOST_ENABLE_REFRESH_PERIOD = 3;
 
-	def __init__(self, port, stepperDriver, baseline=5):
+	def __init__(self, port, stepperDriver, baseline=10):
 		threading.Thread.__init__(self);
 
 		self.stepperDriver = stepperDriver;
@@ -49,9 +49,9 @@ class EagleDriver(threading.Thread):
 
 		self.comLock = Lock();
 		self.rotation = None;
-		self.baseline = 5;
+		self.baseline = baseline;
 
-		self.totalCycles = 0;
+		self.totalCycles = None;
 
 		self.isAlive = True;
 		self.start();
@@ -109,7 +109,7 @@ class EagleDriver(threading.Thread):
 		peep = min(peep, 30);
 		peep = max(peep, 0);
 
-		peep = int((peep+10)*10);
+		peep = round((peep+10)*10);
 		data = EagleDriver.asciiEncode(peep, 3);
 
 		self.sendData(0x06, data);
@@ -128,11 +128,17 @@ class EagleDriver(threading.Thread):
 		return;
 
 	def stopRotate(self):
-		self.rotation.stop();
+		if(self.rotation != None):
+			self.rotation.stop();
 		return;
 
 	def getTotalCycles(self):
 		return self.totalCycles;
+
+	def isRunning(self):
+		if(self.rotation == None or not self.rotation.isAlive):
+			return False;
+		return True;
 
 	def setBaseline(self, baseline):
 		self.baseline = baseline;

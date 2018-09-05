@@ -27,7 +27,7 @@ class StepperDriver():
 		time.sleep(1);
 
 		if(self.com.inWaiting() != 7):
-			print(self.com.inWaiting());
+			# print(self.com.inWaiting());
 			raise Exception("Device not found. Check Motor Controller");
 		print("Motor Connected...");
 		self.com.read(self.com.inWaiting());

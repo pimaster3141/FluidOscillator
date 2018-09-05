@@ -223,9 +223,9 @@ class Oscillator():
     
     def remainingSteps(self):
         if self.isRotating():
-            self.remainingTime = self.device.percentRemaning(seld.devID)
+            self.remainingTime = self.device.percentRemaning(self.devID)
             self.pb["value"] = self.remainingTime
-            print(self.isalarming)
+            # print(self.isalarming)
             if self.remainingTime < 10.0 and self.schedule[self.n-1] == TRUE and self.isalarming == 0:
                 self.isalarming = 1
                 try:
@@ -265,7 +265,8 @@ class Oscillator():
     def setPort(self):
         try:
             self.device.close()
-        except:
+        except Exception as e:
+            print(e);
             pass
         self.portNames = serial_ports()
         self.motorCOM.set(self.portNames[-1])
@@ -306,7 +307,7 @@ class Oscillator():
                 den=1.0
             else:
                 den = 10.0
-            self.ml = simpledialog.askfloat("Offset", "Enter volume [ml], +:fill", parent=self.master, minvalue=-25/den, maxvalue=25/den, initialvalue=self.ml)
+            self.ml = simpledialog.askfloat("Offset", "Enter volume [ml], +:eject", parent=self.master, minvalue=-25/den, maxvalue=25/den, initialvalue=self.ml)
         if self.ml != None:
                 self.offset()
 
