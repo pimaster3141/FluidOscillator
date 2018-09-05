@@ -224,7 +224,7 @@ class Oscillator():
     def remainingSteps(self):
         if self.isRotating():
             self.remainingTime = self.device.percentRemaning(self.devID)
-            self.pb["value"] = self.remainingTime
+            self.pb["value"] = 100.0 - self.remainingTime
             # print(self.isalarming)
             if self.remainingTime < 10.0 and self.schedule[self.n-1] == TRUE and self.isalarming == 0:
                 self.isalarming = 1
