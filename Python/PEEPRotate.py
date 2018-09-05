@@ -29,10 +29,10 @@ class PEEPRotate(threading.Thread):
 				waveTime = time.clock() - self.startTime;
 				peepUpdate = self.amplitude * math.sin(2*math.pi * waveTime * self.frequency) + self.baseline;
 				self.EMV.setPEEP(peepUpdate);
-				print(round(peepUpdate, 1));
-				print(round(waveTime, 1));
+				#print(round(peepUpdate, 1));
+				#print(round(waveTime, 1));
 				# print(self.startTime);
-				print();
+				#print();
 				# time.sleep(max(PEEPRotate.PEEP_UPDATE_PERIOD - (time.clock() - loopTime)), 0);
 				time.sleep(PEEPRotate.PEEP_UPDATE_PERIOD);
 			else:

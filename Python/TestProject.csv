@@ -4,6 +4,6 @@
 #,devID: [0-motor, 1-25ml Pump, 2-2.5ml Pump, 3-EMV]
 #,PAUSE in s,,,
 
-RUN,4,0.05,CW,.1,2
+RUN,1,0.05,CW,.1,0
 PAUSE,10,,,,
 RUN,4,0.05,CW,5,3
