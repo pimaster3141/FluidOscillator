@@ -72,7 +72,10 @@ class DeviceAPI():
 
         if(devID != 3):
             self.motor.setDevice(StepperDriver.StepperDriver.MOTOR_RESOLUTIONS[devID], devID!=0);
-            self.motor.rotate(direction, offset, 0, 0.05);
+            if(devID == 0):
+                self.motor.rotate(direction, 0, offset/360, 0.05);
+            else:
+                self.motor.rotate(direction, offset, 0, 0.05/offset);
         else:
             self.emv.setBaseline(offset);
         return;
