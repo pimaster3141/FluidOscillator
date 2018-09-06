@@ -47,7 +47,7 @@ class Oscillator():
         self.totalDuration = 0
         self.lastTime = time.time()
         self.ml = 0.0
-        self.alarmsound = "beep.wav"
+        self.alarmsound = "Goldfinger.wav"
         self.commandTime = 0
         self.isalarming = 1
         self.timeleft = 0
