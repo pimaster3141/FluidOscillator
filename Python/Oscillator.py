@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+import sys
+sys.path.insert(0, 'PythonLib');
+import setuptools
+import pyximport; pyximport.install()
 
 from sys import platform
 if platform == "linux" or platform == "linux2":
@@ -426,8 +430,6 @@ def serial_ports():
     else:
         # this excludes your current terminal "/dev/tty"
         ports = glob.glob('/dev/ttyUSB*')
-        print(type(ports));
-        print(len(ports));
 
     result = ['None']
     for port in ports:

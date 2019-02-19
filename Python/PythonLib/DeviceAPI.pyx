@@ -1,3 +1,6 @@
+import setuptools
+import pyximport; pyximport.install()
+
 import EagleDriver;
 import StepperDriver;
 

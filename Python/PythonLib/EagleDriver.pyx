@@ -1,3 +1,5 @@
+import setuptools
+import pyximport; pyximport.install()
 import serial;
 import threading;
 from threading import Lock;
@@ -26,26 +28,29 @@ class EagleDriver(threading.Thread):
 	HOST_ENABLE_CMD = [0x02, 0xf5, 0x33, 0x20, 0x46, 0x31, 0x33, 0x42, 0x44, 0x30, 0x38, 0x43, 0x20, 0x32, 0x45, 0x03]
 	HOST_ENABLE_REFRESH_PERIOD = 3;
 
-	def __init__(self, port, stepperDriver, baseline=6):
+	def __init__(self, port, stepperDriver, baseline=6, demo=False):
 		threading.Thread.__init__(self);
 
 		self.stepperDriver = stepperDriver;
+		self.demo = demo;
+		
+		self.com = None;
+		if(not self.demo):
+			self.com = serial.Serial(port=None, baudrate=115200, timeout=1, rtscts=False);
+			self.com.port = port;
+			self.com.open();
 
-		self.com = serial.Serial(port=None, baudrate=115200, timeout=1, rtscts=False);
-		self.com.port = port;
-		self.com.open();
+			while(self.com.inWaiting() != 0):
+				time.sleep(0.5);
+				self.com.reset_input_buffer();
 
-		while(self.com.inWaiting() != 0):
+			self.com.write(bytes(EagleDriver.HOST_ENABLE_CMD));
+			self.com.flush();
 			time.sleep(0.5);
-			self.com.reset_input_buffer();
 
-		self.com.write(bytes(EagleDriver.HOST_ENABLE_CMD));
-		self.com.flush();
-		time.sleep(0.5);
-
-		if(self.com.inWaiting() == 0):
-			raise Exception("Device not found. Check EMV");
-		print("EMV Connected...");
+			if(self.com.inWaiting() == 0):
+				raise Exception("Device not found. Check EMV");
+			print("EMV Connected...");
 
 		self.comLock = Lock();
 		self.rotation = None;
@@ -61,16 +66,18 @@ class EagleDriver(threading.Thread):
 		while(self.isAlive):
 			self.comLock.acquire();
 			try:
-				self.com.write(bytes(EagleDriver.HOST_ENABLE_CMD));
-				self.com.flush();
+				if(not self.demo):
+					self.com.write(bytes(EagleDriver.HOST_ENABLE_CMD));
+					self.com.flush();
 			finally:
 				self.comLock.release();
 			
 			time.sleep(0.5);
-			if(self.com.inWaiting() == 0):
-				self.isAlive = False;
-				raise Exception("Device Error. Check EMV");
-				break;
+			if(not self.demo):
+				if(self.com.inWaiting() == 0):
+					self.isAlive = False;
+					raise Exception("Device Error. Check EMV");
+					# break;
 
 			time.sleep(max(EagleDriver.HOST_ENABLE_REFRESH_PERIOD-0.5, 0.1));
 
@@ -80,7 +87,7 @@ class EagleDriver(threading.Thread):
 	def sendData(self, ID, data):
 		if(self.isAlive == False):
 			raise Exception("No Device");
-			return;
+			# return;
 
 		if(len(bytes([ID])) != 1):
 			raise Exception("Invalid ID");
@@ -97,8 +104,9 @@ class EagleDriver(threading.Thread):
 
 		self.comLock.acquire();
 		try:
-			self.com.write(bytes(payload));
-			self.com.flush();
+			if(not self.demo):
+				self.com.write(bytes(payload));
+				self.com.flush();
 			# print(payload);
 		finally:
 			self.comLock.release();
