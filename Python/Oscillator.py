@@ -1,5 +1,13 @@
 # -*- coding: utf-8 -*-
 
+from sys import platform
+if platform == "linux" or platform == "linux2":
+    pass
+elif platform == "darwin":
+    raise Exception("Unsupported OS: " + str(platform));
+elif platform == "win32":
+    import winsound
+
 
 from tkinter import *
 from tkinter import messagebox as mb
@@ -14,7 +22,6 @@ import glob
 import serial
 import code
 from datetime import timedelta
-import winsound
 
 class Oscillator():
     def __init__(self, master):
@@ -417,9 +424,9 @@ def serial_ports():
         ports = ['COM%s' % (i + 1) for i in range(256)]
     elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
         # this excludes your current terminal "/dev/tty"
-        ports = glob.glob('/dev/tty[A-Za-z]*')
-    elif sys.platform.startswith('darwin'):
-        ports = glob.glob('/dev/tty.*')
+        ports = glob.glob('/dev/ttyUSB*')
+        print(type(ports));
+        print(len(ports));
     else:
         raise EnvironmentError('Unsupported platform')
 
