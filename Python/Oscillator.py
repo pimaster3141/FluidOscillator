@@ -2,10 +2,11 @@
 
 from sys import platform
 if platform == "linux" or platform == "linux2":
-    pass
+    isLinux = True;
 elif platform == "darwin":
     raise Exception("Unsupported OS: " + str(platform));
 elif platform == "win32":
+    isLinux = False;
     import winsound
 
 
@@ -420,15 +421,13 @@ def serial_ports():
         :returns:
             A list of the serial ports available on the system
     """
-    if sys.platform.startswith('win'):
+    if(not isLinux):
         ports = ['COM%s' % (i + 1) for i in range(256)]
-    elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+    else:
         # this excludes your current terminal "/dev/tty"
         ports = glob.glob('/dev/ttyUSB*')
         print(type(ports));
         print(len(ports));
-    else:
-        raise EnvironmentError('Unsupported platform')
 
     result = ['None']
     for port in ports:
