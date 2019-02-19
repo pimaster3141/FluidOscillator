@@ -236,7 +236,7 @@ class Oscillator():
             self.pb["value"]=0
     
     def runExperiment(self):
-        if self.hasStarted: 
+        if self.hasStarted:
             self.clock()
             if self.n < self.N:
                 if not self.isRotating():
@@ -261,13 +261,7 @@ class Oscillator():
             self.remainingSteps()
         self.master.after(self.tick,self.runExperiment)
                 
-        
     def setPort(self):
-        try:
-            self.device.close()
-        except Exception as e:
-            print(e);
-            pass
         self.portNames = serial_ports()
         self.motorCOM.set(self.portNames[-1])
         self.popup = Toplevel()
@@ -319,7 +313,7 @@ class Oscillator():
             else:
                 direction = 1
             self.device.offset(self.devID, direction, abs(self.ml))
-            time.sleep(5) ###REVISION
+            #time.sleep(5) ###REVISION
 
     def start(self):
         if len(self.schedule) == 0:
@@ -341,17 +335,25 @@ class Oscillator():
         
     def stop(self):
         if self.hasStarted:
-            self.hasStarted = FALSE
-            self.device.stop(self.devID)
-            self.stopButt['state'] = 'disabled'
-            self.startButt['state'] = 'normal'
-            self.status['text'] = 'Done.'
-            self.OffsetButt['state'] = 'normal'
-            self.deviceMenu['state'] = 'normal'
-            self.portButt ['state'] = 'normal'
-            self.deviceMenu.configure(state="normal")
-            self.isalarming = 1
-       
+            self.reset()
+            #self.deviceMenu.configure(state="normal")
+
+
+    def reset(self):
+        self.startPausing = bool(1)
+        self.startTime = 0.0
+        self.hasStarted = FALSE
+        self.commandTime = self.device.stop(self.devID)
+        self.stopButt['state'] = 'disabled'
+        self.startButt['state'] = 'normal'
+        self.status['text'] = 'Done.'
+        self.OffsetButt['state'] = 'normal'
+        self.deviceMenu['state'] = 'normal'
+        self.portButt ['state'] = 'normal'
+        self.status['text'] = 'Done.'
+        self.timeleft = self.totalDuration
+        self.isalarming = 1
+        
     def cleanup(self):
         for widget in self.table.winfo_children():
             widget.destroy()
@@ -390,17 +392,7 @@ class Oscillator():
         if self.timeleft >=0:
             self.Timer['text'] = timedelta(seconds=int(self.timeleft))
         else:
-            self.hasStarted = FALSE
-            self.commandTime = self.device.stop(self.devID)
-#            self.n = 0;
-            self.stopButt['state'] = 'disabled'
-            self.startButt['state'] = 'normal'
-            self.status['text'] = 'Done.'
-            self.OffsetButt['state'] = 'normal'
-            self.deviceMenu['state'] = 'normal'
-            self.portButt ['state'] = 'normal'
-            self.Timer['text'] = "00:00:00"
-            self.timeleft = self.totalDuration
+            self.reset()
             
                              
         

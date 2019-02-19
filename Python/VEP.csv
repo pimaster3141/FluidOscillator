@@ -3,12 +3,4 @@
 #,RUN in number of osc or ml,freq in Hz,"Right = 1, Left = 0",number of direction changes = # oscillations*2-1
 #,devID: [0-motor, 1-25ml Pump, 2-2.5ml Pump, 3-EMV]
 #,PAUSE in s,,,
-
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
-RUN,16,0.025,CW,4,3
+RUN,10,0.009,CW,0,0

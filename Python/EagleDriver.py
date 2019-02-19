@@ -26,7 +26,7 @@ class EagleDriver(threading.Thread):
 	HOST_ENABLE_CMD = [0x02, 0xf5, 0x33, 0x20, 0x46, 0x31, 0x33, 0x42, 0x44, 0x30, 0x38, 0x43, 0x20, 0x32, 0x45, 0x03]
 	HOST_ENABLE_REFRESH_PERIOD = 3;
 
-	def __init__(self, port, stepperDriver, baseline=10):
+	def __init__(self, port, stepperDriver, baseline=6):
 		threading.Thread.__init__(self);
 
 		self.stepperDriver = stepperDriver;
@@ -107,7 +107,7 @@ class EagleDriver(threading.Thread):
 
 	def setPEEP(self, peep):
 		peep = min(peep, 30);
-		peep = max(peep, 0);
+		peep = max(peep, 1);
 
 		peep = round((peep+10)*10);
 		data = EagleDriver.asciiEncode(peep, 3);
